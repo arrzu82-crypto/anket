@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+*{box-sizing:border-box}html,body{width:1000px;max-width:100%;overflow-x:hidden}.table,.footer{width:100%;max-width:1000px}body{font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:0;background:transparent;color:#1e293b;padding:2px;-webkit-font-smoothing:antialiased}.table{background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}table{width:100%;border-collapse:collapse;table-layout:fixed}thead th{background:#fff;color:#334155;font-size:13px;font-weight:700;padding:13px 8px;border-bottom:1px solid #e2e8f0}thead th:first-child{width:61%;text-align:left;padding-left:18px}thead th:not(:first-child){width:13%}tbody tr{transition:background-color .15s}tbody tr:not(:last-child){border-bottom:1px solid #eef2f7}tbody tr:has(button.option[aria-pressed="true"]){background:#e8f0fe}td{padding:13px 9px;vertical-align:middle}td:first-child{padding-left:18px;padding-right:14px;line-height:1.45;color:#334155;overflow-wrap:anywhere}tbody tr:has(button.option[aria-pressed="true"]) td:first-child{color:#1e293b}td:not(:first-child){text-align:center}button.option{border:1.5px solid #94a3b8;background:#fff;border-radius:50%;width:24px;height:24px;padding:0;cursor:pointer;position:relative;vertical-align:middle;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:background-color .15s,border-color .15s}button.option:hover:not(:disabled){border-color:#1d4ed8;background:#dbe6fd}button.option[aria-pressed="true"],button.option[aria-pressed="true"]:hover:not(:disabled){background:#1d4ed8;border-color:#1d4ed8}button.option[aria-pressed="true"]:after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;line-height:1}button.option:disabled:not([aria-pressed="true"]){opacity:1;background:#eef1f5;border-color:#e2e8f0;cursor:not-allowed}button.option:disabled:not([aria-pressed="true"]):after{content:'';position:absolute;top:50%;left:50%;width:8px;height:2px;border-radius:2px;background:#a8b3c2;transform:translate(-50%,-50%)}tbody tr:has(button.option[aria-pressed="true"]) button.option:disabled:not([aria-pressed="true"]){background:#dde3ec;border-color:#cdd5e1}tbody tr:has(button.option[aria-pressed="true"]) button.option:disabled:not([aria-pressed="true"]):after{background:#8f9cae}button.option:focus-visible{outline:2px solid #1d4ed8;outline-offset:3px}.footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 2px 2px;color:#64748b;font-size:13px;font-weight:500}.clear{background:#fff;color:#334155;border:1px solid #cbd5e1;border-radius:7px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;touch-action:manipulation;transition:background-color .15s,border-color .15s,color .15s}.clear:hover{background:#f8fafc;border-color:#94a3b8;color:#1e293b}.clear:focus-visible{outline:2px solid #1d4ed8;outline-offset:2px}#jfstatus{display:none;margin-top:8px;padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600}#jfstatus.ok{display:block;background:#dcfce7;color:#166534}#jfstatus.bad{display:block;background:#fee2e2;color:#991b1b}#live{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-width:550px){thead th:first-child{width:55%;padding-left:12px}thead th:not(:first-child){width:15%}td{padding:11px 5px}td:first-child{padding-left:12px;padding-right:8px}thead th{padding:11px 3px;font-size:12px}button.option{width:26px;height:26px}.footer{font-size:12px}}
+
+</style></head><body><div class="table"><table aria-label="Seçim tablosu"><thead><tr><th scope="col"></th><th id="c0"></th><th id="c1"></th><th id="c2"></th></tr></thead><tbody id="body"></tbody></table></div><div class="footer"><span id="counter">0 / 3 sütun seçildi</span><button type="button" class="clear" id="clear">Seçimleri temizle</button></div><div id="jfstatus"></div><div id="live" role="status" aria-live="polite"></div>
+<script>
+/* ===== AYARLAR: Satır ve sütunları buradan değiştirin ===== */
+const CONFIG={
+  columns:["1","2","3"],
+  rows:[
+    "Geniş peyzaj alanlarının sulama ve bahçıvan giderleri",
+    "Süs havuzu/göletlerin pompa elektrik sarfiyatı ve su tüketimi",
+    "Dikey bahçelerin periyodik bakımı ve bitki yenilemesi",
+    "İç bahçe/atriyumların temizlik ve bakım maliyetleri",
+    "Ahşap deck ve doğal cephe kaplamalarının vernik/onarım masrafları",
+    "Hiçbiri (biyofilik unsurların aidatı belirgin şekilde artırdığını düşünmüyorum)",
+    "Bilmiyorum / değerlendiremiyorum"
+  ],
+  uniqueRows:true,
+  /* Test için adresin sonuna ?debug=1 ekleyin */
+  debug:/[?&]debug=1(&|$)/.test(location.search)
+};
+/* =========================================================== */
+const selected=CONFIG.columns.map(()=>null);
+const body=document.getElementById('body');
+CONFIG.columns.forEach((v,i)=>document.getElementById('c'+i).textContent=v);
+
+/* Google Sheets'te okunabilir tek hücre: "1: ... | 2: ... | 3: ..." */
+function valueText(){
+  return selected.map((r,c)=>r===null?null:CONFIG.columns[c]+': '+CONFIG.rows[r]).filter(Boolean).join(' | ');
+}
+function count(){return selected.filter(v=>v!==null).length}
+function jf(){return window.JFCustomWidget&&typeof JFCustomWidget.sendData==='function'}
+function syncJotform(){if(jf())JFCustomWidget.sendData({value:valueText()})}
+function resize(){
+  if(window.JFCustomWidget&&typeof JFCustomWidget.requestFrameResize==='function')
+    JFCustomWidget.requestFrameResize({height:Math.ceil(document.documentElement.scrollHeight)+4});
+}
+
+function render(){
+  body.replaceChildren();
+  CONFIG.rows.forEach((label,r)=>{
+    const tr=document.createElement('tr'),td=document.createElement('td');
+    td.textContent=label;tr.appendChild(td);
+    CONFIG.columns.forEach((col,c)=>{
+      const cell=document.createElement('td'),btn=document.createElement('button');
+      btn.type='button';btn.className='option';
+      const checked=selected[c]===r;
+      const rowUsed=CONFIG.uniqueRows&&selected.some((v,i)=>i!==c&&v===r);
+      btn.disabled=!checked&&(selected[c]!==null||rowUsed);
+      btn.setAttribute('aria-pressed',String(checked));
+      btn.setAttribute('aria-label',`${label} — ${col}${checked?' (seçili)':''}`);
+      btn.onclick=()=>{selected[c]=checked?null:r;render();syncJotform()};
+      cell.appendChild(btn);tr.appendChild(cell);
+    });
+    body.appendChild(tr);
+  });
+  const n=count(),total=CONFIG.columns.length;
+  document.getElementById('counter').textContent=n+' / '+total+' sütun seçildi';
+  document.getElementById('live').textContent=n===total?'Tüm sütunlar seçildi. Değiştirmek için mevcut seçimi kaldırın.':n+' sütun seçildi.';
+  resize();
+}
+document.getElementById('clear').onclick=()=>{selected.fill(null);render();syncJotform()};
+
+/* Gönderimi düzenlerken önceki cevabı geri yükler */
+function restore(value){
+  if(!value||typeof value!=='string')return;
+  value.split(' | ').forEach(part=>{
+    const i=part.indexOf(': ');if(i<0)return;
+    const c=CONFIG.columns.indexOf(part.slice(0,i)),r=CONFIG.rows.indexOf(part.slice(i+2));
+    if(c>-1&&r>-1)selected[c]=r;
+  });
+}
+
+render();
+
+/* Jotform Custom Widget köprüsü (yalnızca bir kez bağlanır) */
+let jfReady=false,jfConnected=false;
+function status(ok,msg){if(!CONFIG.debug)return;const s=document.getElementById('jfstatus');s.className=ok?'ok':'bad';s.textContent=msg;resize()}
+setTimeout(()=>{if(!jfConnected)status(false,window.JFCustomWidget?'Test: Jotform kütüphanesi yüklendi ama form ile bağlantı kurulamadı. Değerler kaydedilmeyecek.':'Test: Jotform kütüphanesi yüklenemedi.')},5000);
+function initJotform(){
+  if(jfReady||!window.JFCustomWidget)return;
+  jfReady=true;
+  JFCustomWidget.subscribe('ready',function(data){
+    jfConnected=true;status(true,'Test: Jotform bağlantısı kuruldu, seçimler gönderiliyor.');
+    restore(data&&data.value);render();syncJotform();
+  });
+  JFCustomWidget.subscribe('submit',function(){
+    status(true,'Test: Cevap Jotform\'a gönderildi: '+valueText());
+    JFCustomWidget.sendSubmit({valid:count()===CONFIG.columns.length,value:valueText()});
+  });
+}
+window.addEventListener('resize',resize);
+</script><script src="https://js.jotform.com/JotFormCustomWidget.min.js" onload="initJotform()"></script></body></html>
